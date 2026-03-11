@@ -1,0 +1,27 @@
+{
+  "name": "sharebite-mcp",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "start:http": "bun run src/index.ts --http",
+    "setup": "bun run scripts/setup-cookies.ts",
+    "lint": "biome check src scripts",
+    "lint:fix": "biome check --fix src scripts",
+    "format": "biome format --write src scripts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.6",
+    "@types/bun": "latest",
+    "tsx": "^4.21.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "zod": "^4.3.6",
+    "zod-to-json-schema": "^3.25.1"
+  }
+}
