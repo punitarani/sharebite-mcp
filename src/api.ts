@@ -1,4 +1,10 @@
-const BASE_URL = process.env.SHAREBITE_BASE_URL || "https://<company>.sharebite.com/api/v1";
+function getBaseUrl(): string {
+  const url = process.env.SHAREBITE_BASE_URL;
+  if (!url) {
+    throw new Error("SHAREBITE_BASE_URL not set. Run `bun run setup` to configure.");
+  }
+  return url;
+}
 
 function getSessionId(): string {
   const sessionId = process.env.SHAREBITE_SESSION_ID;
@@ -30,7 +36,7 @@ async function handleResponse(res: Response): Promise<unknown> {
 }
 
 export async function apiGet(path: string, params?: Record<string, string>): Promise<unknown> {
-  const url = new URL(`${BASE_URL}${path}`);
+  const url = new URL(`${getBaseUrl()}${path}`);
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       if (v !== undefined && v !== "") url.searchParams.set(k, v);
@@ -41,7 +47,7 @@ export async function apiGet(path: string, params?: Record<string, string>): Pro
 }
 
 export async function apiPost(path: string, body: unknown): Promise<unknown> {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${getBaseUrl()}${path}`, {
     method: "POST",
     headers: { ...headers(), "Content-Type": "application/json" },
     body: JSON.stringify(body),
