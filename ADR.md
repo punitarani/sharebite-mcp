@@ -6,21 +6,19 @@ Proposed
 
 ## Context
 
-We need a Model Context Protocol (MCP) server that exposes Sharebite's corporate food ordering API as tools for AI
-assistants. The server will run locally on a user's machine, authenticating via session cookies provided as environment
-variables. It must support both STDIO and HTTP transports.
+We need a Model Context Protocol (MCP) server that exposes Sharebite's corporate food ordering API as tools for AI assistants. The server will run locally on a user's machine, authenticating via session cookies provided as environment variables. It must support both STDIO and HTTP transports.
 
 ## Decision
 
 ### Tech Stack
 
-| Component   | Choice                      | Rationale                                     |
-|-------------|-----------------------------|-----------------------------------------------|
-| Runtime     | Bun                         | Project standard per CLAUDE.md                |
-| Language    | TypeScript                  | Type safety, matches Bun ecosystem            |
-| MCP SDK     | `@modelcontextprotocol/sdk` | Official MCP SDK for TypeScript               |
-| Validation  | Zod                         | Schema validation, used by MCP SDK internally |
-| HTTP Client | `fetch` (built-in)          | No dependencies needed; Bun has native fetch  |
+| Component         | Choice                            | Rationale                                       |
+|-------------------|-----------------------------------|-------------------------------------------------|
+| Runtime           | Bun                               | Project standard per CLAUDE.md                  |
+| Language          | TypeScript                        | Type safety, matches Bun ecosystem              |
+| MCP SDK           | `@modelcontextprotocol/sdk`       | Official MCP SDK for TypeScript                 |
+| Validation        | Zod                               | Schema validation, used by MCP SDK internally   |
+| HTTP Client       | `fetch` (built-in)                | No dependencies needed; Bun has native fetch    |
 
 ### Project Structure
 
@@ -51,10 +49,8 @@ sharebite-mcp/
 
 Reads the `--transport` CLI flag (or `TRANSPORT` env var) to decide the transport mode:
 
-- **`stdio`** (default): Uses `StdioServerTransport` from the MCP SDK. The server communicates over stdin/stdout. This
-  is the standard mode for Claude Code integration.
-- **`http`**: Uses `StreamableHTTPServerTransport` from the MCP SDK, served via `Bun.serve()` on a configurable port (
-  default `3001`). This enables browser-based or remote MCP clients.
+- **`stdio`** (default): Uses `StdioServerTransport` from the MCP SDK. The server communicates over stdin/stdout. This is the standard mode for Claude Code integration.
+- **`http`**: Uses `StreamableHTTPServerTransport` from the MCP SDK, served via `Bun.serve()` on a configurable port (default `3001`). This enables browser-based or remote MCP clients.
 
 ```ts
 import { server } from "./server.ts";
@@ -201,12 +197,12 @@ export function registerAllTools(server: Server) {
 
 ### Environment Variables
 
-| Variable               | Required | Description                                                      |
-|------------------------|----------|------------------------------------------------------------------|
-| `SHAREBITE_SESSION_ID` | Yes      | `sessionid` cookie value                                         |
-| `SHAREBITE_CSRF_TOKEN` | Yes      | `csrftoken` cookie value                                         |
-| `SHAREBITE_BASE_URL`   | No       | API base URL (default: `https://<company>.sharebite.com/api/v1`) |
-| `PORT`                 | No       | HTTP transport port (default: 3001)                              |
+| Variable                | Required | Description                          |
+|-------------------------|----------|--------------------------------------|
+| `SHAREBITE_SESSION_ID`  | Yes      | `sessionid` cookie value             |
+| `SHAREBITE_CSRF_TOKEN`  | Yes      | `csrftoken` cookie value             |
+| `SHAREBITE_BASE_URL`    | No       | API base URL (default: `https://<company>.sharebite.com/api/v1`) |
+| `PORT`                  | No       | HTTP transport port (default: 3001)  |
 
 These go in a `.env` file (auto-loaded by Bun).
 
@@ -222,10 +218,7 @@ These go in a `.env` file (auto-loaded by Bun).
   "mcpServers": {
     "sharebite": {
       "command": "bun",
-      "args": [
-        "run",
-        "/path/to/sharebite-mcp/src/index.ts"
-      ],
+      "args": ["run", "/path/to/sharebite-mcp/src/index.ts"],
       "env": {
         "SHAREBITE_SESSION_ID": "your-session-id",
         "SHAREBITE_CSRF_TOKEN": "your-csrf-token"
@@ -260,38 +253,28 @@ These go in a `.env` file (auto-loaded by Bun).
 ## Implementation Plan
 
 ### Phase 1: Project Setup
-
 1. Install dependencies: `bun add @modelcontextprotocol/sdk zod`
 2. Create `.env.example` with placeholder values
 3. Add `.env` to `.gitignore`
 4. Set up `src/` directory structure
 
 ### Phase 2: Core Infrastructure
-
 5. Implement `src/api.ts` — the Sharebite API client with `apiGet` / `apiPost`
 6. Implement `src/schemas.ts` — Zod schemas for all 20 tool inputs
 7. Implement `src/server.ts` — MCP server creation and tool registration framework
 8. Implement `src/tools/index.ts` — tool registry with list/call handlers
 
 ### Phase 3: Tool Implementation
-
-9. Implement `src/tools/user.ts` — 4 tools: `get_login_status`, `get_corporate_allowance`, `get_user_selections`,
-   `get_user_credit_balance`
-10. Implement `src/tools/group-orders.ts` — 4 tools: `get_this_week_group_orders`, `get_group_order_details`,
-    `get_group_order_restaurant_capacity`, `get_group_order_popular_items`
-11. Implement `src/tools/restaurants.ts` — 8 tools: `search_restaurants`, `get_restaurant_details`,
-    `get_restaurant_menu`, `get_menu_item_detail`, `get_restaurant_popular_items`, `check_restaurant_open`,
-    `get_user_previous_order_items`, `get_checkout_item_suggestions`
-12. Implement `src/tools/orders.ts` — 4 tools: `get_recent_orders`, `calculate_order_prices`,
-    `validate_delivery_address`, `place_order`
+9. Implement `src/tools/user.ts` — 4 tools: `get_login_status`, `get_corporate_allowance`, `get_user_selections`, `get_user_credit_balance`
+10. Implement `src/tools/group-orders.ts` — 4 tools: `get_this_week_group_orders`, `get_group_order_details`, `get_group_order_restaurant_capacity`, `get_group_order_popular_items`
+11. Implement `src/tools/restaurants.ts` — 8 tools: `search_restaurants`, `get_restaurant_details`, `get_restaurant_menu`, `get_menu_item_detail`, `get_restaurant_popular_items`, `check_restaurant_open`, `get_user_previous_order_items`, `get_checkout_item_suggestions`
+12. Implement `src/tools/orders.ts` — 4 tools: `get_recent_orders`, `calculate_order_prices`, `validate_delivery_address`, `place_order`
 
 ### Phase 4: Transport & Entry Point
-
 13. Implement `src/index.ts` — CLI flag parsing, STDIO transport
 14. Add HTTP transport with `StreamableHTTPServerTransport` + `Bun.serve()`
 
 ### Phase 5: Polish
-
 15. Add `scripts` to `package.json` (`start`, `start:http`)
 16. Create `.env.example`
 17. Update `README.md` with setup and usage instructions
@@ -299,19 +282,16 @@ These go in a `.env` file (auto-loaded by Bun).
 ## Consequences
 
 ### Positive
-
 - Simple, single-process architecture — easy to run and debug
 - Direct API passthrough keeps the server thin and maintainable
 - Both STDIO and HTTP transports cover all MCP client types
 - Zod schemas provide input validation and self-documenting tool definitions
 
 ### Negative
-
 - Session cookies expire and must be manually refreshed
 - No caching — every tool call hits the Sharebite API directly
 - The server trusts the upstream API responses without additional validation
 
 ### Risks
-
 - Sharebite API may change endpoints or response formats without notice (no versioning guarantee)
 - Session cookies have a limited lifespan — users may need to re-extract them from browser DevTools periodically

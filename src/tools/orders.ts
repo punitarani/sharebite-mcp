@@ -40,7 +40,7 @@ export function registerOrderTools(server: McpServer) {
 
   server.tool(
     "calculate_order_prices",
-    "Calculate prices (subtotal, tax, fees, tip) for a potential order. Use this before placing an order to preview costs.",
+    "Calculate prices (subtotal, tax, fees, tip) for a potential order. Use this before placing an order to preview costs. For group orders, zip_code and group_order_slug are practically required to avoid 'Invalid Cart' errors.",
     {
       user: z.number().describe("User ID"),
       items: z.array(OrderItemSchema).describe("Items to order"),

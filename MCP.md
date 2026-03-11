@@ -2,13 +2,11 @@
 
 ## Overview
 
-This MCP server provides tools for interacting with the Sharebite corporate food ordering platform. It enables AI
-assistants to browse group orders, search restaurants, view menus, and place orders on behalf of authenticated users.
+This MCP server provides tools for interacting with the Sharebite corporate food ordering platform. It enables AI assistants to browse group orders, search restaurants, view menus, and place orders on behalf of authenticated users.
 
 **Base URL:** Configured via `SHAREBITE_BASE_URL` env var (default: `https://<company>.sharebite.com/api/v1`)
 
-**Authentication:** Cookie-based session auth. The server accepts `sessionid` and `csrftoken` cookies via environment
-variables.
+**Authentication:** Cookie-based session auth. The server accepts `sessionid` and `csrftoken` cookies via environment variables.
 
 ---
 
@@ -16,16 +14,15 @@ variables.
 
 ### 1. `get_login_status`
 
-Returns the current user's profile, corporate info, and approved addresses. Use this as the first call to confirm auth
-and retrieve user context (user ID, corporate addresses, location coordinates).
+Returns the current user's profile, corporate info, and approved addresses. Use this as the first call to confirm auth and retrieve user context (user ID, corporate addresses, location coordinates).
 
 **API:** `GET /users/login_status?timezone={timezone}`
 
 #### Input Schema
 
-| Parameter  | Type   | Required | Default               | Description              |
-|------------|--------|----------|-----------------------|--------------------------|
-| `timezone` | string | No       | `America/Los_Angeles` | IANA timezone identifier |
+| Parameter  | Type   | Required | Default              | Description                    |
+|------------|--------|----------|----------------------|--------------------------------|
+| `timezone` | string | No       | `America/Los_Angeles`| IANA timezone identifier       |
 
 #### Output Schema (key fields)
 
@@ -69,11 +66,11 @@ Returns all group orders for the current week, including their restaurants and o
 
 #### Input Schema
 
-| Parameter   | Type   | Required | Description                                |
-|-------------|--------|----------|--------------------------------------------|
-| `timezone`  | string | Yes      | IANA timezone (e.g. `America/Los_Angeles`) |
-| `latitude`  | number | Yes      | Latitude of delivery address               |
-| `longitude` | number | Yes      | Longitude of delivery address              |
+| Parameter   | Type   | Required | Description                              |
+|-------------|--------|----------|------------------------------------------|
+| `timezone`  | string | Yes      | IANA timezone (e.g. `America/Los_Angeles`)|
+| `latitude`  | number | Yes      | Latitude of delivery address             |
+| `longitude` | number | Yes      | Longitude of delivery address            |
 
 #### Output Schema
 
@@ -90,9 +87,7 @@ Returns all group orders for the current week, including their restaurants and o
         {
           "id": 300001,
           "name": "Example Restaurant",
-          "cuisines": [
-            "Salads"
-          ],
+          "cuisines": ["Salads"],
           "photo_url": "string",
           "order_cap_info": {
             "max_capacity": 50,
@@ -119,16 +114,15 @@ Returns all group orders for the current week, including their restaurants and o
 
 ### 3. `get_group_order_details`
 
-Returns full details for a specific group order by its slug, including all restaurants, order status, and fulfillment
-times.
+Returns full details for a specific group order by its slug, including all restaurants, order status, and fulfillment times.
 
 **API:** `GET /grouporder/user_grouporders/?slug={slug}`
 
 #### Input Schema
 
-| Parameter | Type   | Required | Description                   |
-|-----------|--------|----------|-------------------------------|
-| `slug`    | string | Yes      | Group order slug (hex string) |
+| Parameter | Type   | Required | Description                     |
+|-----------|--------|----------|---------------------------------|
+| `slug`    | string | Yes      | Group order slug (hex string)   |
 
 #### Output Schema
 
@@ -145,17 +139,12 @@ times.
         {
           "id": 300002,
           "name": "Sample Kitchen",
-          "cuisines": [
-            "Mediterranean"
-          ],
+          "cuisines": ["Mediterranean"],
           "at_capacity": "",
           "is_sweetgreen": false
         }
       ],
-      "restaurant_ids": [
-        300002,
-        300003
-      ],
+      "restaurant_ids": [300002, 300003],
       "status": 1,
       "fulfilment_time": "2026-03-12 12:00:00",
       "order_close_time": "2026-03-12 09:00:00",
@@ -183,7 +172,7 @@ Returns the user's recent order history.
 
 | Parameter        | Type   | Required | Default       | Description                             |
 |------------------|--------|----------|---------------|-----------------------------------------|
-| `order_category` | string | No       | `GROUP_ORDER` | Order type filter (`GROUP_ORDER`, etc.) |
+| `order_category` | string | No       | `GROUP_ORDER` | Order type filter (`GROUP_ORDER`, etc.)  |
 
 #### Output Schema
 
@@ -239,19 +228,19 @@ Searches restaurants available for a group order. Can filter by specific restaur
 
 #### Input Schema
 
-| Parameter          | Type   | Required | Description                                         |
-|--------------------|--------|----------|-----------------------------------------------------|
-| `latitude`         | number | Yes      | Latitude of delivery address                        |
-| `longitude`        | number | Yes      | Longitude of delivery address                       |
-| `timezone`         | string | Yes      | IANA timezone                                       |
-| `restaurant_ids`   | string | No       | Comma-separated restaurant IDs to filter            |
-| `group_order_slug` | string | No       | Group order slug to scope the search                |
-| `sortby`           | string | No       | Sort field: `best_match`, `rating`, `delivery_time` |
-| `sort_order`       | string | No       | `asc` or `desc`                                     |
-| `page_num`         | number | No       | Page number (default: 1)                            |
-| `page_size`        | number | No       | Results per page (default: 20)                      |
-| `delivery_status`  | number | No       | `1` = delivery (default)                            |
-| `restaurant_type`  | string | No       | `GROUP_ORDER` (default)                             |
+| Parameter           | Type   | Required | Description                                        |
+|---------------------|--------|----------|----------------------------------------------------|
+| `latitude`          | number | Yes      | Latitude of delivery address                       |
+| `longitude`         | number | Yes      | Longitude of delivery address                      |
+| `timezone`          | string | Yes      | IANA timezone                                      |
+| `restaurant_ids`    | string | No       | Comma-separated restaurant IDs to filter           |
+| `group_order_slug`  | string | No       | Group order slug to scope the search               |
+| `sortby`            | string | No       | Sort field: `best_match`, `rating`, `delivery_time`|
+| `sort_order`        | string | No       | `asc` or `desc`                                    |
+| `page_num`          | number | No       | Page number (default: 1)                           |
+| `page_size`         | number | No       | Results per page (default: 20)                     |
+| `delivery_status`   | number | No       | `1` = delivery (default)                           |
+| `restaurant_type`   | string | No       | `GROUP_ORDER` (default)                            |
 
 #### Output Schema
 
@@ -272,14 +261,8 @@ Searches restaurants available for a group order. Can filter by specific restaur
       "close_time": "21:30:00",
       "cuisines": "Japanese",
       "tag_list": [
-        {
-          "name": "Poke",
-          "is_dietary": false
-        },
-        {
-          "name": "Gluten Free Options",
-          "is_dietary": true
-        }
+        { "name": "Poke", "is_dietary": false },
+        { "name": "Gluten Free Options", "is_dietary": true }
       ],
       "latitude": 40.7128,
       "longitude": -74.006,
@@ -297,19 +280,18 @@ Searches restaurants available for a group order. Can filter by specific restaur
 
 Returns full details about a specific restaurant including hours, fees, tax rate, and settings.
 
-**API:**
-`GET /restaurants/{restaurant_id}/detail/?future_order_date={future_order_date}&latitude={latitude}&longitude={longitude}&timezone={timezone}&delivery_status={delivery_status}`
+**API:** `GET /restaurants/{restaurant_id}/detail/?future_order_date={future_order_date}&latitude={latitude}&longitude={longitude}&timezone={timezone}&delivery_status={delivery_status}`
 
 #### Input Schema
 
-| Parameter           | Type   | Required | Description                             |
-|---------------------|--------|----------|-----------------------------------------|
-| `restaurant_id`     | number | Yes      | Restaurant ID                           |
-| `future_order_date` | string | Yes      | Order date (e.g. `2026-03-12 12:00:00`) |
-| `latitude`          | number | Yes      | Delivery address latitude               |
-| `longitude`         | number | Yes      | Delivery address longitude              |
-| `timezone`          | string | Yes      | IANA timezone                           |
-| `delivery_status`   | number | No       | `1` = delivery (default)                |
+| Parameter           | Type   | Required | Description                               |
+|---------------------|--------|----------|-------------------------------------------|
+| `restaurant_id`     | number | Yes      | Restaurant ID                             |
+| `future_order_date` | string | Yes      | Order date (e.g. `2026-03-12 12:00:00`)   |
+| `latitude`          | number | Yes      | Delivery address latitude                 |
+| `longitude`         | number | Yes      | Delivery address longitude                |
+| `timezone`          | string | Yes      | IANA timezone                             |
+| `delivery_status`   | number | No       | `1` = delivery (default)                  |
 
 #### Output Schema
 
@@ -355,8 +337,7 @@ Returns full details about a specific restaurant including hours, fees, tax rate
 
 Returns the full menu for a restaurant, organized by sections.
 
-**API:**
-`GET /restaurants/menu/?restaurant_id={restaurant_id}&delivery_status={delivery_status}&future_order_date={future_order_date}&timezone={timezone}`
+**API:** `GET /restaurants/menu/?restaurant_id={restaurant_id}&delivery_status={delivery_status}&future_order_date={future_order_date}&timezone={timezone}`
 
 #### Input Schema
 
@@ -407,11 +388,11 @@ Returns detailed info for a single menu item including all modifier groups (Menu
 
 #### Input Schema
 
-| Parameter           | Type   | Required | Description                             |
-|---------------------|--------|----------|-----------------------------------------|
-| `item_id`           | number | Yes      | Menu item ID                            |
-| `timezone`          | string | Yes      | IANA timezone                           |
-| `future_order_time` | string | Yes      | Order time (e.g. `2026-03-12 12:00:00`) |
+| Parameter           | Type   | Required | Description                                  |
+|---------------------|--------|----------|----------------------------------------------|
+| `item_id`           | number | Yes      | Menu item ID                                 |
+| `timezone`          | string | Yes      | IANA timezone                                |
+| `future_order_time` | string | Yes      | Order time (e.g. `2026-03-12 12:00:00`)      |
 
 #### Output Schema
 
@@ -464,10 +445,10 @@ Checks order capacity for a restaurant within a specific group order.
 
 #### Input Schema
 
-| Parameter        | Type   | Required | Description                       |
-|------------------|--------|----------|-----------------------------------|
-| `restaurant_id`  | number | Yes      | Restaurant ID                     |
-| `group_order_id` | number | Yes      | Group order numeric ID (not slug) |
+| Parameter        | Type   | Required | Description                        |
+|------------------|--------|----------|------------------------------------|
+| `restaurant_id`  | number | Yes      | Restaurant ID                      |
+| `group_order_id` | number | Yes      | Group order numeric ID (not slug)  |
 
 #### Output Schema
 
@@ -486,17 +467,16 @@ Checks order capacity for a restaurant within a specific group order.
 
 Returns the user's meal allowance/budget for a specific order time and group order.
 
-**API:**
-`GET /users/corporate_allowance?user_id={user_id}&timezone={timezone}&future_order_date={future_order_date}&group_order={group_order_slug}`
+**API:** `GET /users/corporate_allowance?user_id={user_id}&timezone={timezone}&future_order_date={future_order_date}&group_order={group_order_slug}`
 
 #### Input Schema
 
-| Parameter           | Type   | Required | Description                             |
-|---------------------|--------|----------|-----------------------------------------|
-| `user_id`           | number | Yes      | User ID                                 |
-| `timezone`          | string | Yes      | IANA timezone                           |
-| `future_order_date` | string | No       | Order date (e.g. `2026-03-12 12:00:00`) |
-| `group_order_slug`  | string | No       | Group order slug                        |
+| Parameter           | Type   | Required | Description                              |
+|---------------------|--------|----------|------------------------------------------|
+| `user_id`           | number | Yes      | User ID                                  |
+| `timezone`          | string | Yes      | IANA timezone                            |
+| `future_order_date` | string | No       | Order date (e.g. `2026-03-12 12:00:00`)  |
+| `group_order_slug`  | string | No       | Group order slug                         |
 
 #### Output Schema
 
@@ -529,43 +509,36 @@ Returns the user's meal allowance/budget for a specific order time and group ord
 
 ### 11. `calculate_order_prices`
 
-Calculates pricing for a cart — subtotal, tax, delivery fee, tip, and grand total. Call this before placing an order to
-show the user what they'll pay.
+Calculates pricing for a cart — subtotal, tax, delivery fee, tip, and grand total. Call this before placing an order to show the user what they'll pay.
 
 **API:** `POST /orders/order_prices/`
 
 #### Input Schema
 
-| Parameter           | Type    | Required | Description                      |
-|---------------------|---------|----------|----------------------------------|
-| `user_id`           | number  | Yes      | User ID                          |
-| `restaurant_id`     | number  | Yes      | Restaurant ID                    |
-| `items`             | array   | Yes      | Cart items (see below)           |
-| `is_delivery`       | boolean | Yes      | `true` for delivery              |
-| `latitude`          | number  | Yes      | Delivery latitude                |
-| `longitude`         | number  | Yes      | Delivery longitude               |
-| `delivery_address`  | string  | Yes      | Full delivery address string     |
-| `future_order_date` | string  | Yes      | Order date                       |
-| `zip_code`          | string  | Yes      | Delivery zip code                |
-| `is_group_order`    | boolean | Yes      | `true` for group orders          |
-| `group_order_slug`  | string  | No       | Group order slug                 |
-| `tip_percentage`    | string  | No       | Tip percentage (e.g. `"0.0000"`) |
-| `tip`               | string  | No       | Tip amount (e.g. `"0.0000"`)     |
-| `use_credit`        | boolean | No       | Whether to apply credits         |
+| Parameter           | Type    | Required | Description                                  |
+|---------------------|---------|----------|----------------------------------------------|
+| `user_id`           | number  | Yes      | User ID                                      |
+| `restaurant_id`     | number  | Yes      | Restaurant ID                                |
+| `items`             | array   | Yes      | Cart items (see below)                       |
+| `is_delivery`       | boolean | Yes      | `true` for delivery                          |
+| `latitude`          | number  | Yes      | Delivery latitude                            |
+| `longitude`         | number  | Yes      | Delivery longitude                           |
+| `delivery_address`  | string  | Yes      | Full delivery address string                 |
+| `future_order_date` | string  | Yes      | Order date                                   |
+| `zip_code`          | string  | Yes      | Delivery zip code                            |
+| `is_group_order`    | boolean | Yes      | `true` for group orders                      |
+| `group_order_slug`  | string  | No       | Group order slug                             |
+| `tip_percentage`    | string  | No       | Tip percentage (e.g. `"0.0000"`)             |
+| `tip`               | string  | No       | Tip amount (e.g. `"0.0000"`)                 |
+| `use_credit`        | boolean | No       | Whether to apply credits                     |
 
 **Items array element:**
-
 ```json
 {
   "id": 500003,
-  "selections": [
-    700002
-  ],
+  "selections": [700002],
   "selection_with_quantity": [
-    {
-      "option_id": 700002,
-      "option_quantity": 1
-    }
+    { "option_id": 700002, "option_quantity": 1 }
   ],
   "quantity": 1,
   "instructions": ""
@@ -602,37 +575,37 @@ Places (submits) an order for the authenticated user. This is the checkout actio
 
 #### Input Schema
 
-| Parameter                   | Type    | Required | Description                                          |
-|-----------------------------|---------|----------|------------------------------------------------------|
-| `item_list`                 | array   | Yes      | Cart items (same format as `calculate_order_prices`) |
-| `restaurant_id`             | number  | Yes      | Restaurant ID                                        |
-| `tip`                       | string  | Yes      | Tip amount (e.g. `"0.00"`)                           |
-| `user_address`              | string  | Yes      | Full delivery address                                |
-| `user_apt`                  | string  | Yes      | Floor/apartment number                               |
-| `user_address_crossstreets` | string  | Yes      | Cross streets                                        |
-| `city`                      | string  | Yes      | City                                                 |
-| `zip_code`                  | string  | Yes      | Zip code                                             |
-| `state`                     | string  | Yes      | State abbreviation                                   |
-| `lat`                       | number  | Yes      | Delivery latitude                                    |
-| `lon`                       | number  | Yes      | Delivery longitude                                   |
-| `user_phone`                | string  | Yes      | User phone number                                    |
-| `user_place_id`             | string  | Yes      | Google Places ID for the address                     |
-| `order_type`                | number  | Yes      | `1` = delivery                                       |
-| `is_future_order`           | boolean | Yes      | `true` for scheduled orders                          |
-| `future_order_date`         | string  | Yes      | Order date (e.g. `2026-03-12 12:00:00`)              |
-| `is_group_order`            | boolean | Yes      | `true` for group orders                              |
-| `group_order_slug`          | string  | Yes      | Group order slug                                     |
-| `timezone`                  | string  | Yes      | IANA timezone                                        |
-| `selected_allowance_type`   | number  | Yes      | Expense type ID (from allowance data)                |
-| `product_total`             | number  | Yes      | Subtotal amount                                      |
-| `allowance`                 | number  | Yes      | Allowance amount used                                |
-| `meal_sharers`              | array   | Yes      | Array of user IDs                                    |
-| `meal_allowances`           | array   | Yes      | Array of allowance amounts                           |
-| `assigned_floor`            | string  | Yes      | Delivery floor                                       |
-| `skip_utensils`             | boolean | No       | Skip utensils (default: `true`)                      |
-| `instructions`              | string  | No       | Delivery instructions                                |
-| `credits`                   | number  | No       | Credits to use (default: `0`)                        |
-| `recommendation_id`         | number  | No       | Upsell recommendation ID if applicable               |
+| Parameter                   | Type    | Required | Description                                        |
+|-----------------------------|---------|----------|----------------------------------------------------|
+| `item_list`                 | array   | Yes      | Cart items (same format as `calculate_order_prices`)|
+| `restaurant_id`             | number  | Yes      | Restaurant ID                                      |
+| `tip`                       | string  | Yes      | Tip amount (e.g. `"0.00"`)                         |
+| `user_address`              | string  | Yes      | Full delivery address                              |
+| `user_apt`                  | string  | Yes      | Floor/apartment number                             |
+| `user_address_crossstreets` | string  | Yes      | Cross streets                                      |
+| `city`                      | string  | Yes      | City                                               |
+| `zip_code`                  | string  | Yes      | Zip code                                           |
+| `state`                     | string  | Yes      | State abbreviation                                 |
+| `lat`                       | number  | Yes      | Delivery latitude                                  |
+| `lon`                       | number  | Yes      | Delivery longitude                                 |
+| `user_phone`                | string  | Yes      | User phone number                                  |
+| `user_place_id`             | string  | Yes      | Google Places ID for the address                   |
+| `order_type`                | number  | Yes      | `1` = delivery                                     |
+| `is_future_order`           | boolean | Yes      | `true` for scheduled orders                        |
+| `future_order_date`         | string  | Yes      | Order date (e.g. `2026-03-12 12:00:00`)            |
+| `is_group_order`            | boolean | Yes      | `true` for group orders                            |
+| `group_order_slug`          | string  | Yes      | Group order slug                                   |
+| `timezone`                  | string  | Yes      | IANA timezone                                      |
+| `selected_allowance_type`   | number  | Yes      | Expense type ID (from allowance data)              |
+| `product_total`             | number  | Yes      | Subtotal amount                                    |
+| `allowance`                 | number  | Yes      | Allowance amount used                              |
+| `meal_sharers`              | array   | Yes      | Array of user IDs                                  |
+| `meal_allowances`           | array   | Yes      | Array of allowance amounts                         |
+| `assigned_floor`            | string  | Yes      | Delivery floor                                     |
+| `skip_utensils`             | boolean | No       | Skip utensils (default: `true`)                    |
+| `instructions`              | string  | No       | Delivery instructions                              |
+| `credits`                   | number  | No       | Credits to use (default: `0`)                      |
+| `recommendation_id`         | number  | No       | Upsell recommendation ID if applicable             |
 
 #### Output Schema
 
@@ -670,8 +643,7 @@ Places (submits) an order for the authenticated user. This is the checkout actio
 
 Returns popular menu items for a restaurant.
 
-**API:**
-`GET /restaurants/restaurant_popular_items/{restaurant_id}/?delivery_status={delivery_status}&future_order_date={future_order_date}`
+**API:** `GET /restaurants/restaurant_popular_items/{restaurant_id}/?delivery_status={delivery_status}&future_order_date={future_order_date}`
 
 #### Input Schema
 
@@ -704,17 +676,16 @@ Returns popular menu items for a restaurant.
 
 Returns popular items across all restaurants in a group order.
 
-**API:**
-`GET /grouporder/group_order_popular_items/{group_order_id}/?delivery_status={delivery_status}&future_order_date={future_order_date}&timezone={timezone}`
+**API:** `GET /grouporder/group_order_popular_items/{group_order_id}/?delivery_status={delivery_status}&future_order_date={future_order_date}&timezone={timezone}`
 
 #### Input Schema
 
-| Parameter           | Type   | Required | Description              |
-|---------------------|--------|----------|--------------------------|
-| `group_order_id`    | number | Yes      | Group order numeric ID   |
-| `future_order_date` | string | Yes      | Order date               |
-| `timezone`          | string | Yes      | IANA timezone            |
-| `delivery_status`   | number | No       | `1` = delivery (default) |
+| Parameter           | Type   | Required | Description                             |
+|---------------------|--------|----------|-----------------------------------------|
+| `group_order_id`    | number | Yes      | Group order numeric ID                  |
+| `future_order_date` | string | Yes      | Order date                              |
+| `timezone`          | string | Yes      | IANA timezone                           |
+| `delivery_status`   | number | No       | `1` = delivery (default)                |
 
 #### Output Schema
 
@@ -738,16 +709,15 @@ Returns popular items across all restaurants in a group order.
 
 Returns items the user has previously ordered from a specific restaurant.
 
-**API:**
-`GET /users/user_previous_order_items/{restaurant_id}/?delivery_status={delivery_status}&future_order_date={future_order_date}`
+**API:** `GET /users/user_previous_order_items/{restaurant_id}/?delivery_status={delivery_status}&future_order_date={future_order_date}`
 
 #### Input Schema
 
-| Parameter           | Type   | Required | Description              |
-|---------------------|--------|----------|--------------------------|
-| `restaurant_id`     | number | Yes      | Restaurant ID            |
-| `future_order_date` | string | Yes      | Order date               |
-| `delivery_status`   | number | No       | `1` = delivery (default) |
+| Parameter           | Type   | Required | Description                             |
+|---------------------|--------|----------|-----------------------------------------|
+| `restaurant_id`     | number | Yes      | Restaurant ID                           |
+| `future_order_date` | string | Yes      | Order date                              |
+| `delivery_status`   | number | No       | `1` = delivery (default)                |
 
 #### Output Schema
 
@@ -780,18 +750,16 @@ Validates that a restaurant delivers to a given address.
 
 #### Input Schema
 
-| Parameter    | Type   | Required | Description           |
-|--------------|--------|----------|-----------------------|
-| `address`    | string | Yes      | Full delivery address |
-| `restaurant` | number | Yes      | Restaurant ID         |
+| Parameter    | Type   | Required | Description                 |
+|--------------|--------|----------|-----------------------------|
+| `address`    | string | Yes      | Full delivery address       |
+| `restaurant` | number | Yes      | Restaurant ID               |
 
 #### Output Schema
 
 ```json
 {
-  "valid_delivery_address": [
-    300002
-  ],
+  "valid_delivery_address": [300002],
   "lat": "40.7128",
   "long": "-74.0060"
 }
@@ -803,17 +771,16 @@ Validates that a restaurant delivers to a given address.
 
 Checks if a restaurant is currently open for orders at a given time.
 
-**API:**
-`GET /restaurants/is_rest_open/?restaurant_id={restaurant_id}&is_delivery={is_delivery}&timezone={timezone}&future_order_date={future_order_date}`
+**API:** `GET /restaurants/is_rest_open/?restaurant_id={restaurant_id}&is_delivery={is_delivery}&timezone={timezone}&future_order_date={future_order_date}`
 
 #### Input Schema
 
-| Parameter           | Type    | Required | Description                   |
-|---------------------|---------|----------|-------------------------------|
-| `restaurant_id`     | number  | Yes      | Restaurant ID                 |
-| `timezone`          | string  | Yes      | IANA timezone                 |
-| `future_order_date` | string  | Yes      | Order date                    |
-| `is_delivery`       | boolean | No       | `true` for delivery (default) |
+| Parameter           | Type    | Required | Description                             |
+|---------------------|---------|----------|-----------------------------------------|
+| `restaurant_id`     | number  | Yes      | Restaurant ID                           |
+| `timezone`          | string  | Yes      | IANA timezone                           |
+| `future_order_date` | string  | Yes      | Order date                              |
+| `is_delivery`       | boolean | No       | `true` for delivery (default)           |
 
 #### Output Schema
 
@@ -885,21 +852,20 @@ None.
 
 Returns upsell/add-on item suggestions during checkout to help the user maximize their allowance.
 
-**API:**
-`GET /restaurants/checkout_item_suggestions?platform={platform}&allowance_amount={allowance_amount}&current_total_spend={current_total_spend}&cart_subtotal={cart_subtotal}&restaurant={restaurant_id}&item_ids={item_ids}&order_time_string={order_time_string}&order_timezone={timezone}`
+**API:** `GET /restaurants/checkout_item_suggestions?platform={platform}&allowance_amount={allowance_amount}&current_total_spend={current_total_spend}&cart_subtotal={cart_subtotal}&restaurant={restaurant_id}&item_ids={item_ids}&order_time_string={order_time_string}&order_timezone={timezone}`
 
 #### Input Schema
 
-| Parameter             | Type   | Required | Description                                 |
-|-----------------------|--------|----------|---------------------------------------------|
-| `restaurant_id`       | number | Yes      | Restaurant ID                               |
-| `allowance_amount`    | number | Yes      | User's meal allowance                       |
-| `current_total_spend` | number | Yes      | Current cart subtotal                       |
-| `cart_subtotal`       | number | Yes      | Cart subtotal (same as current_total_spend) |
-| `item_ids`            | string | Yes      | Comma-separated item IDs in cart            |
-| `order_time_string`   | string | Yes      | Order time                                  |
-| `timezone`            | string | Yes      | IANA timezone                               |
-| `platform`            | string | No       | `GROUP_ORDER` (default)                     |
+| Parameter             | Type   | Required | Description                                  |
+|-----------------------|--------|----------|----------------------------------------------|
+| `restaurant_id`       | number | Yes      | Restaurant ID                                |
+| `allowance_amount`    | number | Yes      | User's meal allowance                        |
+| `current_total_spend` | number | Yes      | Current cart subtotal                         |
+| `cart_subtotal`       | number | Yes      | Cart subtotal (same as current_total_spend)   |
+| `item_ids`            | string | Yes      | Comma-separated item IDs in cart             |
+| `order_time_string`   | string | Yes      | Order time                                   |
+| `timezone`            | string | Yes      | IANA timezone                                |
+| `platform`            | string | No       | `GROUP_ORDER` (default)                      |
 
 #### Output Schema
 
@@ -935,7 +901,6 @@ Returns upsell/add-on item suggestions during checkout to help the user maximize
 9. **`place_order`** — Submit the order
 
 ### Alternative discovery flows:
-
 - **`search_restaurants`** — Search for restaurants in a group order
 - **`get_restaurant_popular_items`** / **`get_group_order_popular_items`** — Browse popular items
 - **`get_user_previous_order_items`** — Reorder from past favorites

@@ -41,51 +41,104 @@ export function registerRestaurantTools(server: McpServer) {
   );
 
   server.tool(
-    "get_restaurant_details",
-    "Get detailed info for a specific restaurant including hours, address, and delivery info",
+    "get_restaurant",
+    "Get complete information for a restaurant: details (hours, fees, delivery minimums), whether it's currently open, the full menu organized by section, popular items, and the user's previously ordered items. All data is fetched in parallel for a single comprehensive response. When ordering within a group order, provide group_order_id to also check restaurant capacity.",
     {
       restaurant_id: z.string().describe("Restaurant ID"),
-      latitude: z.string().optional().describe("Delivery latitude"),
-      longitude: z.string().optional().describe("Delivery longitude"),
+      delivery_status: z.string().optional().describe("1 for delivery, 2 for pickup"),
       future_order_date: z.string().optional().describe("Future order date, e.g. 2026-03-12 12:00:00"),
       timezone: z.string().optional().describe("IANA timezone"),
-      delivery_status: z.string().optional().describe("1 for delivery, 2 for pickup"),
+      group_order_slug: z.string().optional().describe("Group order slug for menu context"),
+      group_order_id: z
+        .string()
+        .optional()
+        .describe("Numeric group order ID — when provided, also checks restaurant capacity"),
+      latitude: z.string().optional().describe("Delivery latitude"),
+      longitude: z.string().optional().describe("Delivery longitude"),
     },
-    async ({ restaurant_id, ...params }) => {
+    async ({
+      restaurant_id,
+      delivery_status,
+      future_order_date,
+      timezone,
+      group_order_slug,
+      group_order_id,
+      latitude,
+      longitude,
+    }) => {
       try {
-        const qp: Record<string, string> = {};
-        for (const [k, v] of Object.entries(params)) {
-          if (v) qp[k] = v;
-        }
-        const result = await apiGet(`/restaurants/${restaurant_id}/detail/`, qp);
-        return {
-          content: [{ type: "text" as const, text: JSON.stringify(transform.restaurants.details(result), null, 2) }],
-        };
-      } catch (e: unknown) {
-        return { content: [{ type: "text" as const, text: String(e) }], isError: true };
-      }
-    },
-  );
+        // Build shared query params
+        const detailQp: Record<string, string> = {};
+        if (latitude) detailQp.latitude = latitude;
+        if (longitude) detailQp.longitude = longitude;
+        if (future_order_date) detailQp.future_order_date = future_order_date;
+        if (timezone) detailQp.timezone = timezone;
+        if (delivery_status) detailQp.delivery_status = delivery_status;
 
-  server.tool(
-    "get_restaurant_menu",
-    "Get the full menu for a restaurant including categories, items, and prices",
-    {
-      restaurant_id: z.string().describe("Restaurant ID"),
-      delivery_status: z.string().optional().describe("1 for delivery, 2 for pickup"),
-      future_order_date: z.string().optional().describe("Future order date"),
-      timezone: z.string().optional().describe("IANA timezone"),
-    },
-    async ({ restaurant_id, delivery_status, future_order_date, timezone }) => {
-      try {
-        const params: Record<string, string> = { restaurant_id };
-        if (delivery_status) params.delivery_status = delivery_status;
-        if (future_order_date) params.future_order_date = future_order_date;
-        if (timezone) params.timezone = timezone;
-        const result = await apiGet("/restaurants/menu/", params);
-        return {
-          content: [{ type: "text" as const, text: JSON.stringify(transform.restaurants.menu(result), null, 2) }],
-        };
+        const menuQp: Record<string, string> = { restaurant_id };
+        if (delivery_status) menuQp.delivery_status = delivery_status;
+        if (future_order_date) menuQp.future_order_date = future_order_date;
+        if (timezone) menuQp.timezone = timezone;
+        if (group_order_slug) menuQp.group_order_slug = group_order_slug;
+
+        const openQp: Record<string, string> = { restaurant_id, is_delivery: "true" };
+        if (timezone) openQp.timezone = timezone;
+        if (future_order_date) openQp.future_order_date = future_order_date;
+
+        const popQp: Record<string, string> = {};
+        if (delivery_status) popQp.delivery_status = delivery_status;
+        if (future_order_date) popQp.future_order_date = future_order_date;
+
+        const prevQp: Record<string, string> = {};
+        if (delivery_status) prevQp.delivery_status = delivery_status;
+        if (future_order_date) prevQp.future_order_date = future_order_date;
+
+        // Build parallel fetch array
+        const fetches: Promise<unknown>[] = [
+          apiGet(`/restaurants/${restaurant_id}/detail/`, detailQp), // 0: details
+          apiGet("/restaurants/is_rest_open/", openQp), // 1: is_open
+          apiGet("/restaurants/menu/", menuQp), // 2: menu
+          apiGet(`/restaurants/restaurant_popular_items/${restaurant_id}/`, popQp), // 3: popular
+          apiGet(`/users/user_previous_order_items/${restaurant_id}/`, prevQp), // 4: previously_ordered
+        ];
+
+        // Optional: capacity check (only when group_order_id provided)
+        if (group_order_id) {
+          fetches.push(
+            apiGet("/grouporder/get_group_order_restaurant_capacity/", {
+              restaurant: restaurant_id,
+              group_order: group_order_id,
+            }),
+          ); // 5: capacity
+        }
+
+        const results = await Promise.allSettled(fetches);
+
+        const response: Record<string, unknown> = {};
+        const transforms: Array<{ key: string; transform?: (raw: any) => any }> = [
+          { key: "details", transform: transform.restaurants.details },
+          { key: "is_open" },
+          { key: "menu", transform: transform.restaurants.menu },
+          { key: "popular_items", transform: transform.restaurants.popularItems },
+          { key: "previously_ordered", transform: transform.restaurants.previousOrderItems },
+        ];
+        if (group_order_id) {
+          transforms.push({ key: "capacity" });
+        }
+
+        transforms.forEach((entry, i) => {
+          const res = results[i];
+          if (!res) {
+            throw new Error(`Missing result at index ${i}`);
+          }
+          if (res.status === "fulfilled") {
+            response[entry.key] = entry.transform ? entry.transform(res.value) : res.value;
+          } else {
+            response[entry.key] = { error: String(res.reason) };
+          }
+        });
+
+        return { content: [{ type: "text" as const, text: JSON.stringify(response, null, 2) }] };
       } catch (e: unknown) {
         return { content: [{ type: "text" as const, text: String(e) }], isError: true };
       }
@@ -99,89 +152,18 @@ export function registerRestaurantTools(server: McpServer) {
       item_id: z.string().describe("Menu item ID"),
       timezone: z.string().optional().describe("IANA timezone"),
       future_order_time: z.string().optional().describe("Future order time, e.g. 2026-03-12 12:00:00"),
+      group_order_slug: z.string().optional().describe("Group order slug for group order context"),
     },
-    async ({ item_id, timezone, future_order_time }) => {
+    async ({ item_id, timezone, future_order_time, group_order_slug }) => {
       try {
         const params: Record<string, string> = {};
         if (timezone) params.timezone = timezone;
         if (future_order_time) params.future_order_time = future_order_time;
+        if (group_order_slug) params.group_order_slug = group_order_slug;
         const result = await apiGet(`/restaurants/item_detail/${item_id}`, params);
         return {
           content: [
             { type: "text" as const, text: JSON.stringify(transform.restaurants.menuItemDetail(result), null, 2) },
-          ],
-        };
-      } catch (e: unknown) {
-        return { content: [{ type: "text" as const, text: String(e) }], isError: true };
-      }
-    },
-  );
-
-  server.tool(
-    "get_restaurant_popular_items",
-    "Get the most popular items at a restaurant",
-    {
-      restaurant_id: z.string().describe("Restaurant ID"),
-      delivery_status: z.string().optional().describe("1 for delivery"),
-      future_order_date: z.string().optional().describe("Future order date"),
-    },
-    async ({ restaurant_id, delivery_status, future_order_date }) => {
-      try {
-        const params: Record<string, string> = {};
-        if (delivery_status) params.delivery_status = delivery_status;
-        if (future_order_date) params.future_order_date = future_order_date;
-        const result = await apiGet(`/restaurants/restaurant_popular_items/${restaurant_id}/`, params);
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(transform.restaurants.popularItems(result), null, 2) },
-          ],
-        };
-      } catch (e: unknown) {
-        return { content: [{ type: "text" as const, text: String(e) }], isError: true };
-      }
-    },
-  );
-
-  server.tool(
-    "check_restaurant_open",
-    "Check if a restaurant is currently open and accepting orders",
-    {
-      restaurant_id: z.string().describe("Restaurant ID"),
-      is_delivery: z.string().optional().default("true").describe("Whether checking for delivery"),
-      timezone: z.string().optional().describe("IANA timezone"),
-      future_order_date: z.string().optional().describe("Future order date"),
-    },
-    async ({ restaurant_id, is_delivery, timezone, future_order_date }) => {
-      try {
-        const params: Record<string, string> = { restaurant_id };
-        if (is_delivery) params.is_delivery = is_delivery;
-        if (timezone) params.timezone = timezone;
-        if (future_order_date) params.future_order_date = future_order_date;
-        const result = await apiGet("/restaurants/is_rest_open/", params);
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
-      } catch (e: unknown) {
-        return { content: [{ type: "text" as const, text: String(e) }], isError: true };
-      }
-    },
-  );
-
-  server.tool(
-    "get_user_previous_order_items",
-    "Get items the user has previously ordered from a restaurant",
-    {
-      restaurant_id: z.string().describe("Restaurant ID"),
-      delivery_status: z.string().optional().describe("1 for delivery"),
-      future_order_date: z.string().optional().describe("Future order date"),
-    },
-    async ({ restaurant_id, delivery_status, future_order_date }) => {
-      try {
-        const params: Record<string, string> = {};
-        if (delivery_status) params.delivery_status = delivery_status;
-        if (future_order_date) params.future_order_date = future_order_date;
-        const result = await apiGet(`/users/user_previous_order_items/${restaurant_id}/`, params);
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(transform.restaurants.previousOrderItems(result), null, 2) },
           ],
         };
       } catch (e: unknown) {

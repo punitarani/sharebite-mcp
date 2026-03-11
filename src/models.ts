@@ -10,14 +10,28 @@ function pick<T extends Record<string, any>>(obj: T, keys: string[]): Partial<T>
   return out;
 }
 
+const POPULAR_ITEM_FIELDS = [
+  "id",
+  "name",
+  "title",
+  "description",
+  "about",
+  "price",
+  "image_url",
+  "photo",
+  "restaurant_id",
+  "restaurant_name",
+  "dietary_tags",
+];
+
 function pickPopularItems(raw: any): any {
   if (Array.isArray(raw)) {
-    return raw.map((item: any) => pick(item, ["id", "title", "price", "photo", "about", "dietary_tags"]));
+    return raw.map((item: any) => pick(item, POPULAR_ITEM_FIELDS));
   }
   if (raw && typeof raw === "object" && Array.isArray(raw.results)) {
     return {
       ...pick(raw, ["count"]),
-      results: raw.results.map((item: any) => pick(item, ["id", "title", "price", "photo", "about", "dietary_tags"])),
+      results: raw.results.map((item: any) => pick(item, POPULAR_ITEM_FIELDS)),
     };
   }
   return raw;
@@ -229,17 +243,17 @@ export const transform = {
     menu(raw: any): any {
       if (!Array.isArray(raw)) return raw;
 
-      return raw.map((section: any) => {
-        const ms = section.MenuSection;
-        if (!ms) return section;
-        return {
+      return raw.flatMap((restaurant: any) => {
+        const sections = restaurant.MenuSection;
+        if (!Array.isArray(sections)) return [];
+        return sections.map((ms: any) => ({
           MenuSection: {
             ...pick(ms, ["id", "name", "description"]),
             Item: (ms.Item ?? []).map((item: any) =>
               pick(item, ["id", "title", "about", "price", "photo", "choice_exist", "dietary_tags"]),
             ),
           },
-        };
+        }));
       });
     },
 
@@ -259,9 +273,22 @@ export const transform = {
 
     popularItems: pickPopularItems,
 
-    previousOrderItems: pickPopularItems,
+    previousOrderItems(raw: any): any {
+      if (!Array.isArray(raw)) return raw;
+      return raw.map((item: any) =>
+        pick(item, ["id", "item_name", "item_price", "image_url", "dietary_tags", "order_item_selection_list"]),
+      );
+    },
 
-    checkoutSuggestions: pickPopularItems,
+    checkoutSuggestions(raw: any): any {
+      if (!raw || typeof raw !== "object") return raw;
+      return {
+        recommendation_id: raw.recommendation_id,
+        items: (raw.items ?? []).map((item: any) =>
+          pick(item, ["id", "title", "about", "price", "photo", "choice_exist", "restaurant_id"]),
+        ),
+      };
+    },
   },
 
   orders: {

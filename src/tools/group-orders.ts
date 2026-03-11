@@ -5,90 +5,66 @@ import { transform } from "../models.js";
 
 export function registerGroupOrderTools(server: McpServer) {
   server.tool(
-    "get_this_week_group_orders",
-    "Get this week's available group orders for the user's location",
+    "get_group_orders",
+    "Get this week's available group orders for a delivery location. Returns each group order's schedule, restaurants, and status. Optionally provide a slug to also get full details and popular items across all restaurants for a specific group order — this is the natural next step after the user picks a group order from the list.",
     {
-      timezone: z.string().describe("IANA timezone, e.g. America/Los_Angeles"),
       latitude: z.string().describe("Delivery latitude"),
       longitude: z.string().describe("Delivery longitude"),
+      timezone: z.string().describe("IANA timezone, e.g. America/New_York"),
+      slug: z.string().optional().describe("Group order slug — enriches response with details and popular items"),
+      delivery_status: z.string().optional().describe("1 for delivery (default), 2 for pickup"),
+      future_order_date: z.string().optional().describe("Future order date, e.g. 2026-03-12 12:00:00"),
     },
-    async ({ timezone, latitude, longitude }) => {
+    async ({ latitude, longitude, timezone, slug, delivery_status, future_order_date }) => {
       try {
-        const result = await apiGet("/users/homepage/this-weeks-group-orders/", {
+        const response: Record<string, any> = {};
+
+        // Always fetch this week's group orders
+        const thisWeekPromise = apiGet("/users/homepage/this-weeks-group-orders/", {
           timezone,
           latitude,
           longitude,
-        });
-        return {
-          content: [{ type: "text" as const, text: JSON.stringify(transform.groupOrders.thisWeek(result), null, 2) }],
-        };
-      } catch (e: unknown) {
-        return { content: [{ type: "text" as const, text: String(e) }], isError: true };
-      }
-    },
-  );
+        }).then((r) => transform.groupOrders.thisWeek(r));
 
-  server.tool(
-    "get_group_order_details",
-    "Get details for a specific group order by slug",
-    {
-      slug: z.string().optional().describe("Group order slug identifier. Omit to list all active group orders."),
-    },
-    async ({ slug }) => {
-      try {
-        const params: Record<string, string> = {};
-        if (slug) params.slug = slug;
-        const result = await apiGet("/grouporder/user_grouporders/", params);
-        return {
-          content: [{ type: "text" as const, text: JSON.stringify(transform.groupOrders.details(result), null, 2) }],
-        };
-      } catch (e: unknown) {
-        return { content: [{ type: "text" as const, text: String(e) }], isError: true };
-      }
-    },
-  );
+        if (slug) {
+          // Fetch details in parallel with this_week
+          const detailsPromise = apiGet("/grouporder/user_grouporders/", { slug }).then((r) =>
+            transform.groupOrders.details(r),
+          );
 
-  server.tool(
-    "get_group_order_restaurant_capacity",
-    "Check remaining order capacity for a restaurant within a group order",
-    {
-      restaurant: z.string().describe("Restaurant ID"),
-      group_order: z.string().describe("Group order ID (numeric)"),
-    },
-    async ({ restaurant, group_order }) => {
-      try {
-        const result = await apiGet("/grouporder/get_group_order_restaurant_capacity/", {
-          restaurant,
-          group_order,
-        });
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
-      } catch (e: unknown) {
-        return { content: [{ type: "text" as const, text: String(e) }], isError: true };
-      }
-    },
-  );
+          const [thisWeekRes, detailsRes] = await Promise.allSettled([thisWeekPromise, detailsPromise]);
 
-  server.tool(
-    "get_group_order_popular_items",
-    "Get popular menu items for a group order's restaurant",
-    {
-      group_order_id: z.string().describe("Group order ID (numeric)"),
-      delivery_status: z.string().optional().describe("Delivery status (1 for delivery)"),
-      future_order_date: z.string().optional().describe("Future order date, e.g. 2026-03-12 12:00:00"),
-      timezone: z.string().optional().describe("IANA timezone"),
-    },
-    async ({ group_order_id, delivery_status, future_order_date, timezone }) => {
-      try {
-        const params: Record<string, string> = {};
-        if (delivery_status) params.delivery_status = delivery_status;
-        if (future_order_date) params.future_order_date = future_order_date;
-        if (timezone) params.timezone = timezone;
-        const result = await apiGet(`/grouporder/group_order_popular_items/${group_order_id}/`, params);
-        return {
-          content: [
-            { type: "text" as const, text: JSON.stringify(transform.groupOrders.popularItems(result), null, 2) },
-          ],
-        };
+          response.this_week =
+            thisWeekRes.status === "fulfilled" ? thisWeekRes.value : { error: String(thisWeekRes.reason) };
+          response.details =
+            detailsRes.status === "fulfilled" ? detailsRes.value : { error: String(detailsRes.reason) };
+
+          // Chain: resolve numeric group_order_id from details → fetch popular items
+          if (detailsRes.status === "fulfilled") {
+            const goId = detailsRes.value?.data?.[0]?.id;
+            if (goId) {
+              try {
+                const popParams: Record<string, string> = {};
+                if (delivery_status) popParams.delivery_status = delivery_status;
+                if (future_order_date) popParams.future_order_date = future_order_date;
+                if (timezone) popParams.timezone = timezone;
+                const popRaw = await apiGet(`/grouporder/group_order_popular_items/${goId}/`, popParams);
+                response.popular_items = transform.groupOrders.popularItems(popRaw);
+              } catch (e: unknown) {
+                response.popular_items = { error: String(e) };
+              }
+            }
+          }
+        } else {
+          // No slug — just this week's listing
+          try {
+            response.this_week = await thisWeekPromise;
+          } catch (e: unknown) {
+            response.this_week = { error: String(e) };
+          }
+        }
+
+        return { content: [{ type: "text" as const, text: JSON.stringify(response, null, 2) }] };
       } catch (e: unknown) {
         return { content: [{ type: "text" as const, text: String(e) }], isError: true };
       }
