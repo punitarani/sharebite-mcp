@@ -1,9 +1,9 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { apiGet } from "../api.js";
 import { transform } from "../models.js";
+import type { OwnedToolServer } from "../tool-registry.js";
 
-export function registerUserTools(server: McpServer) {
+export function registerUserTools(server: OwnedToolServer) {
   server.tool(
     "get_user_info",
     "Get the current user's complete profile including login status, corporate info, meal allowance/budget, dietary preferences, and credit balance. Call this first at the start of any ordering session. The response includes user_id, approved delivery addresses (with lat/lng/place_id), allowance amounts, and phone number — all needed by downstream tools. Optionally provide future_order_date and group_order to get the allowance for a specific ordering window.",

@@ -1,9 +1,9 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { apiGet } from "../api.js";
 import { transform } from "../models.js";
+import type { OwnedToolServer } from "../tool-registry.js";
 
-export function registerGroupOrderTools(server: McpServer) {
+export function registerGroupOrderTools(server: OwnedToolServer) {
   server.tool(
     "get_group_orders",
     "Get this week's available group orders for a delivery location. Returns each group order's schedule, restaurants, and status. Optionally provide a slug to also get full details and popular items across all restaurants for a specific group order — this is the natural next step after the user picks a group order from the list.",

@@ -1,9 +1,9 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { apiGet, apiPost } from "../api.js";
 import { transform } from "../models.js";
+import type { OwnedToolServer } from "../tool-registry.js";
 
-export function registerRestaurantTools(server: McpServer) {
+export function registerRestaurantTools(server: OwnedToolServer) {
   server.tool(
     "search_restaurants",
     "Search for restaurants available for ordering. Supports filtering by group order, location, and sorting.",

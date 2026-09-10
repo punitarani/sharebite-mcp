@@ -1,7 +1,7 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { apiGet, apiPost } from "../api.js";
 import { transform } from "../models.js";
+import type { OwnedToolServer } from "../tool-registry.js";
 
 const OrderItemSchema = z.object({
   id: z.number().describe("Menu item ID"),
@@ -19,7 +19,7 @@ const OrderItemSchema = z.object({
   instructions: z.string().optional().default("").describe("Special instructions for this item"),
 });
 
-export function registerOrderTools(server: McpServer) {
+export function registerOrderTools(server: OwnedToolServer) {
   server.tool(
     "get_recent_orders",
     "Get the user's recent orders",

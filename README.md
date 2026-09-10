@@ -56,6 +56,15 @@ Add to your Claude Code MCP settings:
 }
 ```
 
+## Tool ownership
+
+Every tool is published with the owning team in MCP metadata under
+`io.joinhandshake/owning-team`. Sharebite tool ownership is currently
+`workplace-experience`. New tool modules must use `OwnedToolServer`, which
+requires a non-empty owning team and prevents registering tools without that metadata.
+
+Run `bun run check` locally or in CI to verify both types and the ownership-registration boundary.
+
 ## Tools
 
 | Tool | Description |

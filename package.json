@@ -7,6 +7,9 @@
     "start": "bun run src/index.ts",
     "start:http": "bun run src/index.ts --http",
     "setup": "bun run scripts/setup-cookies.ts",
+    "typecheck": "tsc --noEmit",
+    "check:tool-ownership": "bun run scripts/check-tool-ownership.ts",
+    "check": "bun run typecheck && bun run check:tool-ownership",
     "lint": "biome check src scripts",
     "lint:fix": "biome check --fix src scripts",
     "format": "biome format --write src scripts"
